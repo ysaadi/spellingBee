@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strconv"
+	"strings"
 )
 
 func main() {
@@ -22,13 +24,20 @@ func handleConnection(conn net.Conn, ch chan []byte) {
 	var buf [512]byte
 	for {
 		n, err := conn.Read(buf[0:])
-		ch <- buf[0:n]
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
 			ch <- []byte(err.Error())
 		}
+		word := strings.TrimSpace(string(buf[0:n]))
+		validated := ValidateWord(word)
+		if validated {
+			conn.Write([]byte{1})
+		} else {
+			conn.Write([]byte{0})
+		}
+		ch <- []byte(strconv.FormatBool(validated))
 	}
 }
 func serve(ch chan []byte) {
